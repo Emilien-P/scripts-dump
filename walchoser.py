@@ -35,14 +35,18 @@ def configuring ():
 		json_path = wall_path + "/tags.json"
 	configer.set("PATHS", "json_path", json_path)
 	configer.add_section("COMMANDS")
-	configer.set("COMMANDS", "cmd_set_wp", "\"wal -i {} -t\"")
+	configer.set("COMMANDS", "cmd_set_wp", "wal")
 	configer.write(config_file)
 	print("The configuration is now complete")
 	config_file.close()
 	exit(0)
 
-#def listing ():
-	
+def listing (a, b, c, d):
+	#Open the json file
+	with open(os.path.expandvars(json_path), "r") as data_json:
+		tags_dict = json.load(data_json)
+
+	print(json.dumps(tags_dict, indent=4, sort_keys=True))
 
 #look for config file
 config_path = os.environ['HOME'] + "/.config/walchoser"
@@ -54,6 +58,7 @@ if os.path.isfile(config_path) :
 
 	configer = ConfigParser.RawConfigParser()
 	configer.readfp(config_file)
+	global json_path 
 	json_path = configer.get("PATHS", "json_path")
 	cmd_set_wp = configer.get("COMMANDS", "cmd_set_wp")
 	wall_path = configer.get("PATHS", "wall_path")
@@ -64,8 +69,9 @@ if os.path.isfile(config_path) :
 	usage = "usage: %prog [Options] args"
 	parser = OptionParser(usage)
 	parser.add_option("-a", "--add", dest="path_tags", help="-a [PATH] [TAGS] \n Reference a wallpaper at path relative to the set wallpapers directory. The tags must be separated by comas (CSV)", nargs=2)
-	#parser.add_option("-l", "--list", action="callback", callback=listing)
-	parser.add_option("-c", "--config", action="callback", callback=configuring())
+	parser.add_option("-l", "--list", action="callback", callback=listing)
+	parser.add_option("-c", "--config", action="callback", callback=configuring)
+
 	(option, args) = parser.parse_args()
 	if option.path_tags:
 		user_tag_list = option.path_tags[1].split(',')
@@ -88,7 +94,7 @@ if os.path.isfile(config_path) :
 		data_json.close()
 
 	#Change the wallpaper according to tags given
-	if not args and not option.path_tags:
+	if not args and not option:
 		os.system(cmd_set_wp + " -t -i" + wall_path)
 	else:
 		if args and args[0] in tags_dict:
@@ -110,4 +116,3 @@ else:
 	else:
 		print("aborting")
 		exit(0) 
-
