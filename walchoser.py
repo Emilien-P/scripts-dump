@@ -34,6 +34,14 @@ def configuring ():
 	if not json_path:
 		json_path = wall_path + "/tags.json"
 	configer.set("PATHS", "json_path", json_path)
+	#Check whether the file exists
+	keep = 'N'
+	if os.path.isfile(json_path):
+		keep = raw_input("An index file exists already at " + json_path + ".\nDo you want to keep it ? (Y/N)")
+	if keep != 'Y': #Create a new Json file.
+		with open(json_path, "w") as json_file:
+			json_file.write("{}")
+
 	configer.add_section("COMMANDS")
 	configer.set("COMMANDS", "cmd_set_wp", "wal")
 	configer.write(config_file)
@@ -68,11 +76,14 @@ if os.path.isfile(config_path) :
 
 	usage = "usage: %prog [Options] args"
 	parser = OptionParser(usage)
-	parser.add_option("-a", "--add", dest="path_tags", help="-a [PATH] [TAGS] \n Reference a wallpaper at path relative to the set wallpapers directory. The tags must be separated by comas (CSV)", nargs=2)
-	parser.add_option("-l", "--list", action="callback", callback=listing)
-	parser.add_option("-c", "--config", action="callback", callback=configuring)
+	parser.add_option("-a", "--add", dest="path_tags", help="-a [PATH] [TAGS] \n Reference a wallpaper at path relative to the set wallpapers directory. The tags must be separated by comas (CSV).", nargs=2)
+	parser.add_option("-l", "--list", action="callback", callback=listing, help="List your json index file.", nargs=0)
+	parser.add_option("-c", "--config", action="callback", callback=configuring, help="Calls the config wizard.")
+	parser.add_option("-p", "--print", action="store_true", dest="printing", default=False, help="-p [TAGS] To use with tags to print what wallpapers match.")
+	parser.add_option("--get-wp", action="store_true", dest="wall_path", default=False)
 
 	(option, args) = parser.parse_args()
+
 	if option.path_tags:
 		user_tag_list = option.path_tags[1].split(',')
 		filename = option.path_tags[0]
@@ -97,14 +108,25 @@ if os.path.isfile(config_path) :
 	if not args and not option:
 		os.system(cmd_set_wp + " -t -i" + wall_path)
 	else:
+		#In case of the wp printing option, useful for the albert extension
+		if option.wall_path:
+			print(os.path.expandvars(wall_path))
+			exit(0)
 		if args and args[0] in tags_dict:
 			matching = set(tags_dict[args[0]])
 			for tag in args:
 				matching = matching.intersection(set(tags_dict[tag]))
 
-			print("Chosing a wallpaper at random among matching")
-			chosen_wp = random.choice(list(matching))
-			os.system(cmd_set_wp + " -t -i" + wall_path + "/" + chosen_wp)
+			#In case of printing option
+			if option.printing:
+				#print("Those Wallpapers are matching your tags:")
+				print(json.dumps(list(matching), indent=4, sort_keys=True))
+				exit(0)
+			#Else the a wallpaper is set
+			else:
+				print("Chosing a wallpaper at random among matching")
+				chosen_wp = random.choice(list(matching))
+				os.system(cmd_set_wp + " -t -i" + wall_path + "/" + chosen_wp)
 		elif args:
 			print("No wallpaper is matching your tags, exiting.")
 			exit(0)
