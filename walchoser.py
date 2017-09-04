@@ -81,6 +81,8 @@ if os.path.isfile(config_path) :
 	parser.add_option("-c", "--config", action="callback", callback=configuring, help="Calls the config wizard.")
 	parser.add_option("-p", "--print", action="store_true", dest="printing", default=False, help="-p [TAGS] To use with tags to print what wallpapers match.")
 	parser.add_option("--get-wp", action="store_true", dest="wall_path", default=False)
+	parser.add_option("-q", "--quiet", action="store_true", dest="quiet", default=False)
+	parser.add_option("-t", "--get-tags", dest="wp_path", nargs=1, help="Output the tags of a given wallpaper")
 
 	(option, args) = parser.parse_args()
 
@@ -112,23 +114,33 @@ if os.path.isfile(config_path) :
 		if option.wall_path:
 			print(os.path.expandvars(wall_path))
 			exit(0)
+		#in case of tags wanted
+		elif option.wp_path:
+			#NOT efficient by efficiency is not compulsory here
+			tags = {k: v for k, v in tags_dict.items() if option.wp_path in v}
+			print(json.dumps(tags.keys()))
+			exit(0)
 		if args and args[0] in tags_dict:
 			matching = set(tags_dict[args[0]])
 			for tag in args:
-				matching = matching.intersection(set(tags_dict[tag]))
+				if tag in tags_dict:
+					matching = matching.intersection(set(tags_dict[tag]))
 
 			#In case of printing option
 			if option.printing:
-				#print("Those Wallpapers are matching your tags:")
+				if not option.quiet:
+					print("Those Wallpapers are matching your tags:")
 				print(json.dumps(list(matching), indent=4, sort_keys=True))
 				exit(0)
 			#Else the a wallpaper is set
 			else:
-				print("Chosing a wallpaper at random among matching")
+				if not option.quiet:
+					print("Chosing a wallpaper at random among matching")
 				chosen_wp = random.choice(list(matching))
 				os.system(cmd_set_wp + " -t -i" + wall_path + "/" + chosen_wp)
 		elif args:
-			print("No wallpaper is matching your tags, exiting.")
+			if not option.quiet:
+				print("No wallpaper is matching your tags, exiting.")
 			exit(0)
 
 else:
@@ -137,4 +149,5 @@ else:
 		configuring()
 	else:
 		print("aborting")
-		exit(0) 
+		exit(0)
+exit(0)
