@@ -99,6 +99,7 @@ if os.path.isfile(config_path) :
 			toadd.append(filename)
 			if tag in tags_dict:
 				 toadd.extend(tags_dict[tag])
+			toadd = list(set(toadd)) #remove potential duplicate reference
 			tags_dict.update({tag:toadd})
 
 		data_json = open(os.path.expandvars(json_path), "w")
